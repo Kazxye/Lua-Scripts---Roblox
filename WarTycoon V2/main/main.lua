@@ -54,6 +54,8 @@ local RunService = game:GetService("RunService")
 
 local InfiniteJumpEnabled = false
 local NoClipEnabled = false
+local CanTeleport = true
+local LastAirdrop = nil
 
 
 --- Aba Principal Com todas as suas Funções.
@@ -131,6 +133,69 @@ local Divider = EspTab:CreateDivider()
 local MiscTab = Window:CreateTab('Misc', 'app-window')
 local Section = MiscTab:CreateSection('Misc Functions')
 local Divider = MiscTab:CreateDivider()
+
+
+
+--- ABA TELEPORT COM TODAS AS SUAS FUNÇÕES
+--- TELEPORT TELEPORT TELEPORT
+--- TELEPORT TELEPORT TELEPORT
+
+local TPTab = Window:CreateTab('Teleport', 'map-pin')
+local Section = TPTab:CreateSection('Teleport Features')
+local Divider = TPTab:CreateDivider()
+
+--- FUNÇÃO TELEPORTE --- 
+local function TeleportTo(position)
+   local character = Players.LocalPlayer.Character
+   if character and character:FindFirstChild("HumanoidRootPart") then
+      character:MoveTo(position)
+   end
+end
+
+--- FUNÇÃO VERFICIAR AIRDROP
+
+local beamsFolder = workspace:WaitForChild("Beams")
+
+beamsFolder.ChildAdded:Connect(function(child)
+   if child:IsA("BasePart") and string.match(child.Name, "^Airdrop_%d+") then
+      LastAirdrop = child
+      Rayfield:Notify({
+         Title = "Airdrop Detectado!",
+         Content = "Novo airdrop apareceu: " .. child.Name,
+         Duration = 5,
+         Image = 'bell',
+      })
+   end
+end)
+
+TPTab:CreateButton({
+   Name = "Teleportar para Ponto de Captura",
+   Callback = function()
+      TeleportTo(Vector3.new(-548.5264282226562, 71.5843505859375, -1364.2601318359375))
+   end,
+})
+
+TPTab:CreateButton({
+   Name = "Teleportar para Último Airdrop",
+   Callback = function()
+      if LastAirdrop and LastAirdrop:IsDescendantOf(workspace) then
+         TeleportTo(LastAirdrop.Position)
+         Rayfield:Notify({
+            Title = "Teleportado",
+            Content = "Foste até " .. LastAirdrop.Name,
+            Duration = 3,
+            Image = 'map-pin',
+         })
+      else
+         Rayfield:Notify({
+            Title = "Erro",
+            Content = "Nenhum airdrop válido encontrado!",
+            Duration = 3,
+            Image = 'x',
+         })
+      end
+   end,
+})
 
 --- Aba Binds Com todas suas Funções.
 --- BIND BIND BIND

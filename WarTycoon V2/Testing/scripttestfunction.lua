@@ -55,28 +55,11 @@ local RunService = game:GetService("RunService")
 
 --- VARIÁVEIS PARA TESTE
 
-local CanTeleport = true
+
 
 -- ABA TESTES COM FUNÇÕES 
 
 local MainTab = Window:CreateTab("TESTING", 'shield-ellipsis')
-local Section = MainTab:CreateSection("Testing Functions")
-local Divider = MainTab:CreateDivider()
-
-local function TeleportTo(position)
-   local character = Players.LocalPlayer.Character
-   if character and character:FindFirstChild("HumanoidRootPart") then
-      character:MoveTo(position)
-   end
-end
-
-MainTab:CreateButton({
-   Name = "Teleportar para Ponto de Captura",
-   Callback = function()
-      TeleportTo(Vector3.new(-548.5264282226562, 71.5843505859375, -1364.2601318359375))
-   end,
-})
-
-
-
+local Section = TestTab:CreateSection("Testing Functions")
+local Divider = TestTab:CreateDivider()
 

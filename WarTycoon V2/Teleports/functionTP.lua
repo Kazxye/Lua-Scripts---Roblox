@@ -54,8 +54,8 @@ local Section = TPTab:CreateSection('Teleport Features')
 local Divider = TPTab:CreateDivider()
 
 TPTab:CreateButton({
-   Name = "Teleportar para Ponto de Captura",
+   Name = "Teleportar",
    Callback = function()
-      TeleportTo(Vector3.new(-548.5264282226562, 71.5843505859375, -1364.2601318359375))
+      TeleportTo(Vector3.new(-482.5264282226562, 60, -1181))
    end,
 })
