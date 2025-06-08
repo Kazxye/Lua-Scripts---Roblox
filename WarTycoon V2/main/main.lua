@@ -56,7 +56,8 @@ local InfiniteJumpEnabled = false
 local NoClipEnabled = false
 local CanTeleport = true
 local LastAirdrop = nil
-
+local WalkSpeedNormal = 16
+local WalkSpeedBoost = 50
 
 --- Aba Principal Com todas as suas Funções.
 --- MAIN MAIN MAIN
@@ -81,6 +82,21 @@ RunService.Stepped:Connect(function()
             part.CanCollide = false
          end
       end
+   end
+end)
+--- FUNÇÃO VELOCIDADE
+local function SetPlayerSpeed(enabled)
+   local character = Players.LocalPlayer.Character or Players.LocalPlayer.CharacterAdded:Wait()
+   local humanoid = character:FindFirstChildOfClass("Humanoid")
+   if humanoid then
+      humanoid.WalkSpeed = enabled and WalkSpeedBoost or WalkSpeedNormal
+   end
+end
+Players.LocalPlayer.CharacterAdded:Connect(function(char)
+   char:WaitForChild("Humanoid")
+   task.wait(0.2) -- pequeno atraso para garantir que tudo carregou
+   if SpeedHackEnabled then
+      SetPlayerSpeed(true)
    end
 end)
 
@@ -114,6 +130,23 @@ MainTab:CreateToggle({
          Content = Value and "Ativado" or "Desativado",
          Duration = 3,
          Image = 'shield-check',
+      })
+   end,
+})
+
+MainTab:CreateToggle({
+   Name = "Speed Hack",
+   CurrentValue = false,
+   Flag = "SpeedHackToggle",
+   Callback = function(Value)
+      SpeedHackEnabled = Value
+      SetPlayerSpeed(Value)
+
+      Rayfield:Notify({
+         Title = "Speed Hack",
+         Content = Value and "Velocidade aumentada!" or "Velocidade normal.",
+         Duration = 3,
+         Image = 'zap',
       })
    end,
 })
@@ -207,7 +240,7 @@ local Divider = BindTab:CreateDivider()
 
 local Keybind = BindTab:CreateKeybind({
    Name = "- Infinite Jump -",
-   CurrentKeybind = "Q",
+   CurrentKeybind = "Select",
    HoldToInteract = false,
    Flag = "Keybind1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
    Callback = function()
@@ -223,7 +256,7 @@ local Keybind = BindTab:CreateKeybind({
 
 local Keybind = BindTab:CreateKeybind({
    Name = "NoClip",
-   CurrentKeybind = "B",
+   CurrentKeybind = "Select",
    HoldToInteract = false,
    Flag = "Keybind2", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
    Callback = function()
@@ -233,6 +266,23 @@ local Keybind = BindTab:CreateKeybind({
          Content = NoClipEnabled and 'Ativado!' or 'Desativado',
          Duration = 3,
          Image = 'shield-check'
+      })
+   end,
+})
+
+local Keybind = BindTab:CreateKeybind({
+   Name = "Speed Hack",
+   CurrentKeybind = "Select",
+   HoldToInteract = false,
+   Flag = "Keybind3",
+   Callback = function()
+      SpeedHackEnabled = not SpeedHackEnabled
+      SetPlayerSpeed(SpeedHackEnabled)
+      Rayfield:Notify({
+         Title = "Speed Hack",
+         Content = SpeedHackEnabled and "Ativado por tecla!" or "Desativado por tecla!",
+         Duration = 3,
+         Image = 'zap',
       })
    end,
 })

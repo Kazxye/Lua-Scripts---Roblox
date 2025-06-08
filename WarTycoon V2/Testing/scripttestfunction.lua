@@ -55,11 +55,13 @@ local RunService = game:GetService("RunService")
 
 --- VARIÁVEIS PARA TESTE
 
-
+  -- Valor de velocidade quando ativado (podes ajustar)
 
 -- ABA TESTES COM FUNÇÕES 
 
 local MainTab = Window:CreateTab("TESTING", 'shield-ellipsis')
-local Section = TestTab:CreateSection("Testing Functions")
-local Divider = TestTab:CreateDivider()
+local Section = MainTab:CreateSection("Testing Functions")
+local Divider = MainTab:CreateDivider()
+
+
 
