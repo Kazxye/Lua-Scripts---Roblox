@@ -1,9 +1,9 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-   Name = "SCRIPTZIN COMPLETO",
+   Name = "Script WarTycoon",
    Icon = 'bomb',
-   LoadingTitle = "Loading Script...",
+   LoadingTitle = "Carregando Script...",
    LoadingSubtitle = "by Kazz",
    Theme = "Ocean",
 
@@ -13,8 +13,8 @@ local Window = Rayfield:CreateWindow({
    DisableBuildWarnings = false,
 
    ConfigurationSaving = {
-      Enabled = true,
-      FolderName = "ScriptzinCompleto",
+      Enabled = false,
+      FolderName = "WarTycoon",
       FileName = "Config"
    },
 
@@ -39,7 +39,7 @@ local Window = Rayfield:CreateWindow({
 -- Notificação Inicial
 Rayfield:Notify({
    Title = "Script Bypass Executado!",
-   Content = "Press K To open.",
+   Content = "Aperte K para abrir o menu.",
    Duration = 8,
    Image = 'shield-check',
 })
@@ -59,6 +59,24 @@ local CanTeleport = true
 local LastAirdrop = nil
 local WalkSpeedNormal = 16
 local WalkSpeedBoost = 50
+
+--- VARIÁVEIS GLOBAIS FLY
+local LocalPlayer = Players.LocalPlayer
+local FlyEnabled = false
+local FlySpeed = 50
+local FlyConnection = nil
+local BodyVelocity = nil
+local BodyAngularVelocity = nil
+
+-- Controles do Fly
+local Controls = {
+   W = false, -- Frente
+   A = false, -- Esquerda
+   S = false, -- Trás
+   D = false, -- Direita
+   Space = false, -- Cima
+   LeftShift = false, -- Baixo
+}
 
 --- VARIÁVEIS GLOBAIS ESP
 local Typing = false
@@ -117,6 +135,12 @@ Players.LocalPlayer.CharacterAdded:Connect(function(char)
    if SpeedHackEnabled then
       SetPlayerSpeed(true)
    end
+   
+   -- Reativar fly após respawn se estiver ativado
+   if FlyEnabled then
+      task.wait(1)
+      CreateFlyObjects()
+   end
 end)
 
 --- FUNÇÃO TELEPORTE
@@ -142,6 +166,199 @@ beamsFolder.ChildAdded:Connect(function(child)
    end
 end)
 
+--- FUNÇÕES FLY ---
+
+-- Função para criar BodyVelocity
+function CreateFlyObjects()
+   local character = LocalPlayer.Character
+   if not character or not character:FindFirstChild("HumanoidRootPart") then
+      return false
+   end
+   
+   local rootPart = character.HumanoidRootPart
+   
+   -- Remover objetos existentes
+   if BodyVelocity then
+      BodyVelocity:Destroy()
+   end
+   if BodyAngularVelocity then
+      BodyAngularVelocity:Destroy()
+   end
+   
+   -- Criar novos objetos
+   BodyVelocity = Instance.new("BodyVelocity")
+   BodyVelocity.MaxForce = Vector3.new(4000, 4000, 4000)
+   BodyVelocity.Velocity = Vector3.new(0, 0, 0)
+   BodyVelocity.Parent = rootPart
+   
+   BodyAngularVelocity = Instance.new("BodyAngularVelocity")
+   BodyAngularVelocity.MaxTorque = Vector3.new(4000, 4000, 4000)
+   BodyAngularVelocity.AngularVelocity = Vector3.new(0, 0, 0)
+   BodyAngularVelocity.Parent = rootPart
+   
+   return true
+end
+
+-- Função para remover objetos do fly
+local function RemoveFlyObjects()
+   if BodyVelocity then
+      BodyVelocity:Destroy()
+      BodyVelocity = nil
+   end
+   if BodyAngularVelocity then
+      BodyAngularVelocity:Destroy()
+      BodyAngularVelocity = nil
+   end
+end
+
+-- Função principal do fly
+local function UpdateFly()
+   local character = LocalPlayer.Character
+   if not character or not character:FindFirstChild("HumanoidRootPart") then
+      return
+   end
+   
+   local rootPart = character.HumanoidRootPart
+   local humanoid = character:FindFirstChildOfClass("Humanoid")
+   
+   if not BodyVelocity or not BodyAngularVelocity then
+      if not CreateFlyObjects() then
+         return
+      end
+   end
+   
+   -- Calcular direção baseada na câmera
+   local camera = Camera
+   local cameraCFrame = camera.CFrame
+   
+   -- Vetores de direção
+   local moveVector = Vector3.new(0, 0, 0)
+   
+   -- Frente/Trás (W/S)
+   if Controls.W then
+      moveVector = moveVector + cameraCFrame.LookVector
+   end
+   if Controls.S then
+      moveVector = moveVector - cameraCFrame.LookVector
+   end
+   
+   -- Esquerda/Direita (A/D)
+   if Controls.A then
+      moveVector = moveVector - cameraCFrame.RightVector
+   end
+   if Controls.D then
+      moveVector = moveVector + cameraCFrame.RightVector
+   end
+   
+   -- Cima/Baixo (Space/Shift)
+   if Controls.Space then
+      moveVector = moveVector + Vector3.new(0, 1, 0)
+   end
+   if Controls.LeftShift then
+      moveVector = moveVector - Vector3.new(0, 1, 0)
+   end
+   
+   -- Normalizar e aplicar velocidade
+   if moveVector.Magnitude > 0 then
+      moveVector = moveVector.Unit * FlySpeed
+   end
+   
+   -- Aplicar velocidade
+   BodyVelocity.Velocity = moveVector
+   
+   -- Desabilitar PlatformStand para melhor controle
+   if humanoid then
+      humanoid.PlatformStand = true
+   end
+end
+
+-- Função para ativar/desativar fly
+local function ToggleFly(enabled)
+   FlyEnabled = enabled
+   
+   if enabled then
+      if CreateFlyObjects() then
+         FlyConnection = RunService.Heartbeat:Connect(UpdateFly)
+         
+         Rayfield:Notify({
+            Title = "Fly Mode Ativado!",
+            Content = "Use WASD + Space/Shift para voar",
+            Duration = 5,
+            Image = 'plane',
+         })
+      else
+         Rayfield:Notify({
+            Title = "Erro",
+            Content = "Não foi possível ativar o fly mode",
+            Duration = 3,
+            Image = 'x',
+         })
+         FlyEnabled = false
+      end
+   else
+      -- Desativar fly
+      if FlyConnection then
+         FlyConnection:Disconnect()
+         FlyConnection = nil
+      end
+      
+      RemoveFlyObjects()
+      
+      -- Restaurar PlatformStand
+      local character = LocalPlayer.Character
+      if character then
+         local humanoid = character:FindFirstChildOfClass("Humanoid")
+         if humanoid then
+            humanoid.PlatformStand = false
+         end
+      end
+      
+      Rayfield:Notify({
+         Title = "Fly Mode Desativado",
+         Content = "Você voltou ao chão",
+         Duration = 3,
+         Image = 'plane',
+      })
+   end
+end
+
+-- Event listeners para controles do fly
+UIS.InputBegan:Connect(function(input, gameProcessed)
+   if gameProcessed then return end
+   
+   if FlyEnabled then
+      if input.KeyCode == Enum.KeyCode.W then
+         Controls.W = true
+      elseif input.KeyCode == Enum.KeyCode.A then
+         Controls.A = true
+      elseif input.KeyCode == Enum.KeyCode.S then
+         Controls.S = true
+      elseif input.KeyCode == Enum.KeyCode.D then
+         Controls.D = true
+      elseif input.KeyCode == Enum.KeyCode.Space then
+         Controls.Space = true
+      elseif input.KeyCode == Enum.KeyCode.LeftShift then
+         Controls.LeftShift = true
+      end
+   end
+end)
+
+UIS.InputEnded:Connect(function(input, gameProcessed)
+   if input.KeyCode == Enum.KeyCode.W then
+      Controls.W = false
+   elseif input.KeyCode == Enum.KeyCode.A then
+      Controls.A = false
+   elseif input.KeyCode == Enum.KeyCode.S then
+      Controls.S = false
+   elseif input.KeyCode == Enum.KeyCode.D then
+      Controls.D = false
+   elseif input.KeyCode == Enum.KeyCode.Space then
+      Controls.Space = false
+   elseif input.KeyCode == Enum.KeyCode.LeftShift then
+      Controls.LeftShift = false
+   end
+end)
+
 --- FUNÇÕES ESP ---
 
 -- Controle de texto para ESP
@@ -152,7 +369,6 @@ end)
 UIS.TextBoxFocusReleased:Connect(function()
     Typing = false
 end)
-
 
 -- Função para criar ESP por jogador
 local function CreateESPForPlayer(player)
@@ -223,7 +439,7 @@ end
 
 --- ABA MAIN ---
 local MainTab = Window:CreateTab("Main", 'align-justify')
-local MainSection = MainTab:CreateSection("Main Functions")
+local MainSection = MainTab:CreateSection("Movement Functions")
 MainTab:CreateDivider()
 
 MainTab:CreateToggle({
@@ -273,6 +489,48 @@ MainTab:CreateToggle({
    end,
 })
 
+-- Seção Fly Mode
+local FlySection = MainTab:CreateSection("Fly Mode")
+
+MainTab:CreateToggle({
+   Name = "Fly Mode",
+   CurrentValue = false,
+   Flag = "FlyToggle",
+   Callback = function(Value)
+      ToggleFly(Value)
+   end,
+})
+
+MainTab:CreateSlider({
+   Name = "Velocidade do Fly",
+   Range = {10, 200},
+   Increment = 5,
+   Suffix = " studs/s",
+   CurrentValue = 50,
+   Flag = "FlySpeedSlider",
+   Callback = function(Value)
+      FlySpeed = Value
+   end,
+})
+
+MainTab:CreateButton({
+   Name = "Resetar Posição",
+   Callback = function()
+      local character = LocalPlayer.Character
+      if character and character:FindFirstChild("HumanoidRootPart") then
+         character.HumanoidRootPart.CFrame = CFrame.new(0, 100, 0)
+         
+         Rayfield:Notify({
+            Title = "Posição Resetada",
+            Content = "Você foi teleportado para o spawn",
+            Duration = 3,
+            Image = 'home',
+         })
+      end
+   end,
+})
+
+
 --- ABA ESP ---
 local EspTab = Window:CreateTab('ESP', 'eye')
 local EspSection = EspTab:CreateSection('ESP Functions')
@@ -286,13 +544,12 @@ if Drawing then
         Flag = "ESPVisibleToggle",
         Callback = function(Value)
             _G.ESPVisible = Value
-            if _G.SendNotifications then
-                game:GetService("StarterGui"):SetCore("SendNotification",{
-                    Title = "ESP Toggle",
-                    Text = "ESP agora está "..tostring(_G.ESPVisible),
-                    Duration = 3
-                })
-            end
+            Rayfield:Notify({
+                Title = "ESP Toggle",
+                Content = Value and "ESP ativado!" or "ESP desativado!",
+                Duration = 3,
+                Image = Value and 'eye' or 'eye-off',
+            })
         end,
     })
 
@@ -320,21 +577,19 @@ if Drawing then
     -- Executar ESP
     local Success, Errored = pcall(CreateESP)
     if Success then
-        if _G.SendNotifications then
-            game:GetService("StarterGui"):SetCore("SendNotification",{
-                Title = "ESP Carregado",
-                Text = "ESP carregado com sucesso!",
-                Duration = 5
-            })
-        end
+        Rayfield:Notify({
+            Title = "ESP Carregado",
+            Content = "ESP carregado com sucesso!",
+            Duration = 5,
+            Image = 'eye',
+        })
     else
-        if _G.SendNotifications then
-            game:GetService("StarterGui"):SetCore("SendNotification",{
-                Title = "Erro ESP",
-                Text = "Erro ao carregar ESP!",
-                Duration = 5
-            })
-        end
+        Rayfield:Notify({
+            Title = "Erro ESP",
+            Content = "Erro ao carregar ESP!",
+            Duration = 5,
+            Image = 'x',
+        })
         warn(Errored)
     end
 else
@@ -379,6 +634,41 @@ TPTab:CreateButton({
 local MiscTab = Window:CreateTab('Misc', 'app-window')
 local MiscSection = MiscTab:CreateSection('Misc Functions')
 MiscTab:CreateDivider()
+
+-- Botão de emergência para desativar tudo
+MiscTab:CreateButton({
+   Name = "Desativar Todas as Funções",
+   Callback = function()
+      -- Desativar todas as funções
+      InfiniteJumpEnabled = false
+      NoClipEnabled = false
+      SpeedHackEnabled = false
+      ToggleFly(false)
+      
+      -- Reset velocidade
+      SetPlayerSpeed(false)
+      
+      -- Forçar limpeza completa do fly
+      if FlyConnection then
+         FlyConnection:Disconnect()
+         FlyConnection = nil
+      end
+      
+      RemoveFlyObjects()
+      
+      -- Reset todos os controles
+      for key, _ in pairs(Controls) do
+         Controls[key] = false
+      end
+      
+      Rayfield:Notify({
+         Title = "Sistema Resetado",
+         Content = "Todas as funções foram desativadas",
+         Duration = 3,
+         Image = 'shield-check',
+      })
+   end,
+})
 
 --- ABA BINDS ---
 local BindTab = Window:CreateTab('Binds', 'keyboard')
@@ -433,3 +723,20 @@ BindTab:CreateKeybind({
       })
    end,
 })
+
+BindTab:CreateKeybind({
+   Name = "Fly Mode",
+   CurrentKeybind = "Select",
+   HoldToInteract = false,
+   Flag = "Keybind4",
+   Callback = function()
+      ToggleFly(not FlyEnabled)
+   end,
+})
+
+-- Cleanup quando o script for removido
+game.Players.PlayerRemoving:Connect(function(player)
+   if player == LocalPlayer then
+      ToggleFly(false)
+   end
+end)
